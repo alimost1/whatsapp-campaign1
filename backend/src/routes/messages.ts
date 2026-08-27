@@ -143,7 +143,8 @@ router.put('/:id', authenticate, [
     }
 
     const message = await prisma.message.findUnique({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
+      include: { contact: true }
     });
 
     if (!message || message.contact.userId !== req.user!.id) {
@@ -174,7 +175,8 @@ router.put('/:id', authenticate, [
 router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const message = await prisma.message.findUnique({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
+      include: { contact: true }
     });
 
     if (!message || message.contact.userId !== req.user!.id) {

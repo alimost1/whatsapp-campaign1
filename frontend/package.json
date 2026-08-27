@@ -20,7 +20,7 @@
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.1.0",
     "lucide-react": "^0.300.0",
-    "react-hot-toast": "^4.4.1",
+    "react-hot-toast": "^2.6.0",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
