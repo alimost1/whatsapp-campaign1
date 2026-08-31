@@ -1,24 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
+import api from '../api/axios'
 import { Users, Mail, MessageSquare, TrendingUp } from 'lucide-react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const token = localStorage.getItem('token')
       const [contacts, campaigns, messages] = await Promise.all([
-        axios.get(`${API_URL}/api/contacts`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_URL}/api/campaigns`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_URL}/api/messages`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        api.get('/api/contacts'),
+        api.get('/api/campaigns'),
+        api.get('/api/messages')
       ])
       
       return {
