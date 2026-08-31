@@ -29,6 +29,7 @@ model Contact {
   email     String?
   tags      String?
   notes     String?
+  group_name String?
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())

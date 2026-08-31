@@ -13,6 +13,7 @@ import messageRoutes from './routes/messages';
 import templateRoutes from './routes/templates';
 import uploadRoutes from './routes/uploads';
 import evolutionRoutes from './routes/evolution';
+import v2Routes from './routes/v2';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 
@@ -31,8 +32,18 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message: 'Too many requests from this IP, please try again later.'
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '10000'),
+  message: 'Too many requests from this IP, please try again later.',
+  // Skip rate limiting for multipart/form-data (file uploads)
+  skip: (req) => !!req.is('multipart/form-data'),
+  // Use user ID from auth header if available, otherwise IP
+  keyGenerator: (req) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return `user:${authHeader.slice(7, 30)}`; // Use token prefix as key
+    }
+    return req.ip || 'unknown';
+  },
 });
 app.use('/api/', limiter);
 
@@ -53,6 +64,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/evolution', evolutionRoutes);
+app.use('/api/v2', v2Routes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
+import api from '../api/axios'
 import toast from 'react-hot-toast'
 import { Send } from 'lucide-react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 export default function Messages() {
   const queryClient = useQueryClient()
@@ -16,10 +14,7 @@ export default function Messages() {
   const { data: messagesData, isLoading: messagesLoading } = useQuery({
     queryKey: ['messages'],
     queryFn: async () => {
-      const token = localStorage.getItem('token')
-      const response = await axios.get(`${API_URL}/api/messages`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await api.get('/messages')
       return response.data.messages || []
     }
   })
@@ -27,20 +22,14 @@ export default function Messages() {
   const { data: contactsData } = useQuery({
     queryKey: ['contacts'],
     queryFn: async () => {
-      const token = localStorage.getItem('token')
-      const response = await axios.get(`${API_URL}/api/contacts`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await api.get('/contacts')
       return response.data.contacts || []
     }
   })
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: any) => {
-      const token = localStorage.getItem('token')
-      const response = await axios.post(`${API_URL}/api/messages`, message, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await api.post('/messages', message)
       return response.data
     },
     onSuccess: () => {
@@ -79,17 +68,17 @@ export default function Messages() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Send Message Form */}
       <div className="lg:col-span-1">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Send Message</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Send Message</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Contact *
               </label>
               <select
                 value={newMessage.contactId}
                 onChange={(e) => setNewMessage({ ...newMessage, contactId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 required
               >
                 <option value="">Select a contact</option>
@@ -101,13 +90,13 @@ export default function Messages() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Message *
               </label>
               <textarea
                 value={newMessage.content}
                 onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 rows={5}
                 placeholder="Type your message here..."
                 required
@@ -127,17 +116,17 @@ export default function Messages() {
 
       {/* Messages List */}
       <div className="lg:col-span-2">
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Messages</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Recent Messages</h2>
           </div>
-          <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700 max-h-[600px] overflow-y-auto">
             {messagesData?.map((message: any) => (
-              <div key={message.id} className="p-6 hover:bg-gray-50">
+              <div key={message.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">{message.content}</p>
-                    <div className="mt-2 flex items-center space-x-2 text-xs text-gray-500">
+                    <p className="text-sm text-slate-900 dark:text-white">{message.content}</p>
+                    <div className="mt-2 flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
                       <span>{message.contact?.name || message.contact?.phone}</span>
                       <span>•</span>
                       <span>{new Date(message.createdAt).toLocaleDateString()}</span>
@@ -150,7 +139,7 @@ export default function Messages() {
               </div>
             ))}
             {(!messagesData || messagesData.length === 0) && (
-              <div className="p-6 text-center text-gray-500">
+              <div className="p-6 text-center text-slate-500 dark:text-slate-400">
                 No messages yet
               </div>
             )}

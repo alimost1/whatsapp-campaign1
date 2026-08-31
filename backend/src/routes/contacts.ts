@@ -1,10 +1,26 @@
-import { Router, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { PrismaClient } from '@prisma/client';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+// Multer config for CSV uploads
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads/contacts');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const upload = multer({
+  dest: UPLOAD_DIR,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    if (file.originalname.match(/\.(csv)$/i)) cb(null, true);
+    else cb(new Error('CSV files only (.csv)'));
+  },
+});
 
 // Get all contacts for current user
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
@@ -174,6 +190,83 @@ router.delete('/', authenticate, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// Upload contacts from CSV
+router.post('/upload', authenticate, (req: AuthRequest, res: Response) => {
+  upload.single('file')(req, res, async (err: any) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { groupName } = req.body;
+
+    try {
+      const fileContent = fs.readFileSync(req.file.path, 'utf-8');
+      const lines = fileContent.trim().split('\n');
+      
+      if (lines.length < 2) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: 'CSV must have header and at least one row' });
+      }
+
+      // Parse header
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      const nameIdx = headers.indexOf('name');
+      const phoneIdx = headers.indexOf('phone');
+      const groupIdx = headers.indexOf('group_name');
+
+      if (nameIdx === -1 || phoneIdx === -1) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: 'CSV must have "name" and "phone" columns' });
+      }
+
+      let imported = 0;
+      let skipped = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const name = values[nameIdx] || '';
+        const phone = values[phoneIdx] || '';
+        const group_name = groupIdx !== -1 ? values[groupIdx] : (groupName || null);
+
+        if (!phone || phone.length < 10) {
+          skipped++;
+          continue;
+        }
+
+        // Check if contact already exists
+        const existing = await prisma.contact.findFirst({
+          where: { phone, userId: req.user!.id }
+        });
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        await prisma.contact.create({
+          data: {
+            name,
+            phone,
+            group_name,
+            userId: req.user!.id
+          }
+        });
+        imported++;
+      }
+
+      fs.unlinkSync(req.file.path);
+      res.json({ imported, skipped, total: lines.length - 1 });
+    } catch (e: any) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+      res.status(500).json({ error: e.message });
+    }
+  });
 });
 
 export default router;

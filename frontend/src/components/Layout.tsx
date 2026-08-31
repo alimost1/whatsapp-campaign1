@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Search
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -29,6 +30,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'Contacts', href: '/contacts', icon: Users },
     { name: 'Campaigns', href: '/campaigns', icon: Mail },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: 'Scraper', href: '/scraper', icon: Search },
     { name: 'Templates', href: '/templates', icon: FileText },
     { name: 'Settings', href: '/settings', icon: Settings },
   ]

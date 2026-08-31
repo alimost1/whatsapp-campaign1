@@ -7,10 +7,20 @@ import Campaigns from './pages/Campaigns'
 import Messages from './pages/Messages'
 import Templates from './pages/Templates'
 import Settings from './pages/Settings'
+import Scraper from './pages/Scraper'
 import Layout from './components/Layout'
 
 function App() {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, isHydrated } = useAuthStore()
+
+  // Don't render routes until auth store is hydrated from localStorage
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
+      </div>
+    )
+  }
 
   return (
     <Routes>
@@ -30,6 +40,7 @@ function App() {
           )
         }
       />
+      <Route path="/contact" element={<Navigate to="/contacts" replace />} />
       <Route
         path="/contacts"
         element={
@@ -79,6 +90,18 @@ function App() {
         }
       />
       <Route
+        path="/scraper"
+        element={
+          isAuthenticated ? (
+            <Layout>
+              <Scraper />
+            </Layout>
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
         path="/settings"
         element={
           isAuthenticated ? (
@@ -90,6 +113,7 @@ function App() {
           )
         }
       />
+      <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
     </Routes>
   )
 }
