@@ -13,11 +13,13 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
         // Only retry on 429 (rate limit), max 3 times
-        return error.response?.status === 429 && failureCount < 3
+        const axiosError = error as { response?: { status?: number } }
+        return axiosError.response?.status === 429 && failureCount < 3
       },
       retryDelay: (failureCount, error) => {
         // Respect Retry-After header
-        const retryAfter = error.response?.headers?.['retry-after']
+        const axiosError = error as { response?: { headers?: { 'retry-after'?: string } } }
+        const retryAfter = axiosError.response?.headers?.['retry-after']
         if (retryAfter) {
           return parseFloat(retryAfter) * 1000
         }
