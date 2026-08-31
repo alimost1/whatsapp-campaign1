@@ -9,8 +9,21 @@ import './index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,
+      staleTime: 30000, // 30 seconds
       refetchOnWindowFocus: false,
+      retry: (failureCount, error) => {
+        // Only retry on 429 (rate limit), max 3 times
+        return error.response?.status === 429 && failureCount < 3
+      },
+      retryDelay: (failureCount, error) => {
+        // Respect Retry-After header
+        const retryAfter = error.response?.headers?.['retry-after']
+        if (retryAfter) {
+          return parseFloat(retryAfter) * 1000
+        }
+        // Exponential backoff: 1s, 2s, 4s
+        return Math.min(1000 * Math.pow(2, failureCount), 4000)
+      },
     },
   },
 })
